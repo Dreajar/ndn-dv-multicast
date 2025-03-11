@@ -26,7 +26,8 @@ class Node:
     def add_to_group(self):
         self.in_group = True
 
-    def receive_interest(self, interest):
+    def receive_interest(self, interest, from_node):
+        self.rib.used_faces.append(from_node)
         return self.pit.receive_interest(interest)
 
     def produce_interest(self):
@@ -45,7 +46,7 @@ class Simulator:
         self.nodes_in_group = []
         self.interests_produced = [0 for i in range(num_nodes)]
         self.interests_dropped = [0 for i in range(num_nodes)]
-        self.interests_received = [0 for i in range(num_nodes)]
+        self.interests_kept = [0 for i in range(num_nodes)]
         self.interests_sent = [0 for i in range(num_nodes)]
 
     def add_to_group(self, nodeIDs):
@@ -57,12 +58,13 @@ class Simulator:
         self.nodes[nodeID].set_routes(routing_info)
     
     def send_interest(self, from_node, face, interestID):
-        print(f'Interest {interestID} sent from {from_node} to {face}')
         #print(self.nodes[from_node].pit.used_faces_by_interest(interestID))
         interest = self.nodes[from_node].get_interest_to_send(interestID, face)
         interest.used_faces.append(face)
         if face in self.nodes[from_node].rib.used_faces:
             return
+        print(f'Interest {interestID} sent from {from_node} to {face}')
+        self.interests_sent[from_node] += 1
         self.nodes[from_node].rib.used_faces.append(face)
         #print("Used faces by rib: " + str(self.nodes[from_node].rib.used_faces))
         if face in self.nodes_in_group:
@@ -70,9 +72,11 @@ class Simulator:
                 interest.remaining_destinations.remove(face)
                 if len(interest.remaining_destinations) == 0:
                     print(f'Interest {interestID} reached all nodes in group!')
-        if not self.nodes[face].receive_interest(interest):
+        if not self.nodes[face].receive_interest(interest, from_node):
             print(f'Interest {interestID} dropped at {face}')
             self.interests_dropped[face] += 1
+        else:
+            self.interests_kept[face] += 1
 
     def produce_interest(self, node):
         interest = self.nodes[node].produce_interest()
@@ -95,8 +99,6 @@ class Simulator:
 
                 for f in faces_to_send:
                     any_sent = True
-                    self.interests_sent[node] += 1
-                    self.interests_received[f] += 1
                     self.send_interest(node, f, interestID)
             return any_sent
 
@@ -115,8 +117,6 @@ class Simulator:
 
                 for f in faces_to_send:
                     any_sent = True
-                    self.interests_sent[node] += 1
-                    self.interests_received[f] += 1
                     self.send_interest(node, f, interestID)
             return any_sent
 
@@ -131,4 +131,4 @@ class Simulator:
             for n in self.nodes:
                 interests_sent[n.nodeID] = self.run_forwarding_strategy(strategy, n.nodeID)
             if True not in interests_sent:
-                return self.interests_produced, self.interests_dropped, self.interests_received, self.interests_sent
+                return self.interests_produced, self.interests_dropped, self.interests_kept, self.interests_sent
