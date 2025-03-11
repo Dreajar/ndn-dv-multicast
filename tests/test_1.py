@@ -1,0 +1,29 @@
+import sys
+
+
+sys.path.append('../src')
+
+from simulator import *
+
+def main():
+    sim = Simulator(7)
+    sim.add_to_group([0, 5, 6])
+
+    # This would normally be built by a distance vector router
+    sim.set_routes(0, {5: {0: 2, 1: 5}, 6: {0: 3, 1: 4}})
+    sim.set_routes(1, {0: {0: 1, 4: 4, 5: 6}, 5: {0: 6, 4: 3, 5: 1}, 6: {0: 3, 4: 2, 5: 2}})
+    sim.set_routes(2, {0: {0: 1, 3: 4}, 5: {0: 3, 3: 4}, 6: {0: 4, 3: 3}})
+    sim.set_routes(3, {0: {2: 2, 4: 3}, 5: {2: 4, 4: 3}, 6: {2: 4, 4: 3}})
+    sim.set_routes(4, {0: {1: 2, 3: 3, 6: 4}, 5: {1: 2, 3: 5, 6: 2}, 6: {1: 3, 3: 6, 6: 1}})
+    sim.set_routes(5, {0: {1: 2, 6: 5}, 6: {1: 3, 6: 1}})
+    sim.set_routes(6, {0: {4: 3, 5: 3}, 5: {4: 3, 5: 1}})
+
+    dropped, received, sent = sim.run(STRATEGY_LOWEST_COST, [0])
+
+    for i in range(7):
+        print(f'Node {i} dropped {dropped[i]}, received {received[i]}, sent {sent[i]}')
+
+    print("Simulation completed!")
+
+if __name__ == '__main__':
+    main()
