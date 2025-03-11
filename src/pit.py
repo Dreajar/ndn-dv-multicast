@@ -45,7 +45,8 @@ class Pit:
         return Interest(original=self.interests[interestID])
 
     def get_interest_to_send(self, interestID, face):
-        self.ready_IDs.remove(interestID)
-        self.sent_IDs.append(interestID)
-        self.interests[interestID].state = INTEREST_STATE_SENT
+        if interestID in self.ready_IDs:
+            self.ready_IDs.remove(interestID)
+            self.sent_IDs.append(interestID)
+            self.interests[interestID].state = INTEREST_STATE_SENT
         return Interest(original=self.interests[interestID])

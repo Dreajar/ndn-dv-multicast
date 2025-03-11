@@ -21,6 +21,7 @@ class Rib:
     
     def get_lowest_cost_route(self, node, used_faces):
         # Gets the lowest cost route to a node.
+        #print(node, used_faces, self.routes)
         lowest_cost = 10000000000
         lowest_cost_node = -1
         for f in self.routes[node]:
@@ -31,4 +32,9 @@ class Rib:
                 lowest_cost_node = f
         return lowest_cost_node
             
-
+    def get_all_faces_to_node(self, node):
+        # Returns all faces that can reach a node
+        if node not in self.routes:
+            return []
+        for f in self.routes[node]:
+            return self.routes[node].keys()

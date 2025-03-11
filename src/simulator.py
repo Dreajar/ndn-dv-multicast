@@ -4,6 +4,9 @@ from pit import *
 from rib import *
 
 STRATEGY_LOWEST_COST = 1
+STRATEGY_SEND_ALL = 2
+
+strategy_names = {1: "lowest_cost", 2: "send_all"}
 
 class Node:
     def __init__(self, nodeID):
@@ -50,6 +53,7 @@ class Simulator:
         self.nodes[nodeID].set_routes(routing_info)
     
     def send_interest(self, from_node, face, interestID):
+        print(f'Interest {interestID} sent from {from_node} to {face}')
         interest = self.nodes[from_node].get_interest_to_send(interestID, face)
         self.nodes[face].add_interest(interest)
 
@@ -73,7 +77,26 @@ class Simulator:
                 for f in faces_to_send:
                     any_sent = True
                     self.interests_sent[node] += 1
-                    self.interests_received[node] += 1
+                    self.interests_received[f] += 1
+                    self.send_interest(node, f, interestID)
+            return any_sent
+
+        if strategy == STRATEGY_SEND_ALL:
+            any_sent = False
+            for interestID in self.nodes[node].ready_interests():
+                used_faces = self.nodes[node].pit.used_faces_by_interest(interestID)
+                faces_to_send = []
+                for n in self.nodes_in_group:
+                    if n != node:
+                        possible_faces = self.nodes[node].rib.get_all_faces_to_node(node)
+                        for p in possible_faces:
+                            if p not in faces_to_send:
+                                faces_to_send.append(lowest_cost_face)
+
+                for f in faces_to_send:
+                    any_sent = True
+                    self.interests_sent[node] += 1
+                    self.interests_received[f] += 1
                     self.send_interest(node, f, interestID)
             return any_sent
 
