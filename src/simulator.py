@@ -58,17 +58,20 @@ class Simulator:
     
     def send_interest(self, from_node, face, interestID):
         print(f'Interest {interestID} sent from {from_node} to {face}')
-        self.nodes[from_node].pit.use_face(from_node, interestID)
-        self.nodes[from_node].pit.use_face(face, interestID)
         #print(self.nodes[from_node].pit.used_faces_by_interest(interestID))
         interest = self.nodes[from_node].get_interest_to_send(interestID, face)
         interest.used_faces.append(face)
+        if face in self.nodes[from_node].rib.used_faces:
+            return
+        self.nodes[from_node].rib.used_faces.append(face)
+        #print("Used faces by rib: " + str(self.nodes[from_node].rib.used_faces))
         if face in self.nodes_in_group:
             if face in interest.remaining_destinations:
                 interest.remaining_destinations.remove(face)
                 if len(interest.remaining_destinations) == 0:
                     print(f'Interest {interestID} reached all nodes in group!')
         if not self.nodes[face].receive_interest(interest):
+            print(f'Interest {interestID} dropped at {face}')
             self.interests_dropped[face] += 1
 
     def produce_interest(self, node):

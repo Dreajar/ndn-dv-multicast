@@ -13,8 +13,8 @@ class Interest:
             self.used_faces = []
         else:
             self.ID = original.ID
-            self.remaining_destinations = original.remaining_destinations
-            self.used_faces = original.used_faces
+            self.remaining_destinations = original.remaining_destinations[::]
+            self.used_faces = original.used_faces[::]
         self.state = INTEREST_STATE_READY
 
 

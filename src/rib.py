@@ -10,6 +10,7 @@ class Rib:
         self.nodeID = nodeID
         self.faces = []
         self.routes = {}
+        self.used_faces = []
     
     def set_routes(self, routing_info):
         # Takes the place of actually creating the routing algorithm, temporarily
@@ -39,4 +40,4 @@ class Rib:
         if node in used_faces:
             return []
         for f in self.routes[node]:
-            return [s for s in self.routes[node].keys() if s not in used_faces]
+            return [s for s in self.routes[node].keys() if s not in used_faces and s not in self.used_faces]
