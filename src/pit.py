@@ -10,15 +10,17 @@ class Interest:
             self.ID = Interest.nextIntID
             Interest.nextIntID += 1
             self.remaining_destinations = []
+            self.used_faces = []
         else:
             self.ID = original.ID
             self.remaining_destinations = original.remaining_destinations
-        self.used_faces = []
+            self.used_faces = original.used_faces
         self.state = INTEREST_STATE_READY
 
 
 class Pit:
-    def __init__(self):
+    def __init__(self, nodeID):
+        self.nodeID = nodeID
         self.interests = {}
         self.IDs = []
         self.ready_IDs = []
@@ -39,6 +41,7 @@ class Pit:
     
     def produce_interest(self):
         interest = Interest()
+        interest.used_faces.append(self.nodeID)
         # If an interest arrives that has already been sent, ready to send it again
         self.ready_IDs.append(interest.ID)
         self.IDs.append(interest.ID)
@@ -56,6 +59,9 @@ class Pit:
 
     def ready_interests(self):
         return self.ready_IDs
+    
+    def use_face(self, face, interestID):
+        self.interests[interestID].used_faces.append(face)
 
     def get_interest_by_id(self, interestID):
         return Interest(original=self.interests[interestID])

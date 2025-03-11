@@ -12,7 +12,7 @@ class Node:
     def __init__(self, nodeID):
         self.in_group = False
         self.nodeID = nodeID
-        self.pit = Pit()
+        self.pit = Pit(nodeID)
         # Note that the RIB acts as a FIB here
         self.rib = Rib(nodeID)
         self.faces = []
@@ -58,7 +58,11 @@ class Simulator:
     
     def send_interest(self, from_node, face, interestID):
         print(f'Interest {interestID} sent from {from_node} to {face}')
+        self.nodes[from_node].pit.use_face(from_node, interestID)
+        self.nodes[from_node].pit.use_face(face, interestID)
+        #print(self.nodes[from_node].pit.used_faces_by_interest(interestID))
         interest = self.nodes[from_node].get_interest_to_send(interestID, face)
+        interest.used_faces.append(face)
         if face in self.nodes_in_group:
             if face in interest.remaining_destinations:
                 interest.remaining_destinations.remove(face)
@@ -69,6 +73,7 @@ class Simulator:
 
     def produce_interest(self, node):
         interest = self.nodes[node].produce_interest()
+        interest.used_faces.append(node)
         interest.remaining_destinations = [s for s in self.nodes_in_group if s != node]
         self.interests_produced[node] += 1
 
@@ -78,6 +83,7 @@ class Simulator:
             for interestID in self.nodes[node].ready_interests():
                 used_faces = self.nodes[node].pit.used_faces_by_interest(interestID)
                 faces_to_send = []
+                #print("already used " + str(used_faces))
                 for n in self.nodes[node].pit.get_interest_by_id(interestID).remaining_destinations:
                     if n != node:
                         lowest_cost_face = self.nodes[node].rib.get_lowest_cost_route(n, used_faces)
@@ -95,10 +101,11 @@ class Simulator:
             any_sent = False
             for interestID in self.nodes[node].ready_interests():
                 used_faces = self.nodes[node].pit.used_faces_by_interest(interestID)
+                #print("already used " + str(used_faces))
                 faces_to_send = []
                 for n in self.nodes[node].pit.get_interest_by_id(interestID).remaining_destinations:
                     if n != node:
-                        possible_faces = self.nodes[node].rib.get_all_faces_to_node(n)
+                        possible_faces = self.nodes[node].rib.get_all_faces_to_node(n, used_faces=used_faces)
                         for p in possible_faces:
                             if p not in faces_to_send:
                                 faces_to_send.append(p)

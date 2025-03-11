@@ -10,6 +10,7 @@ def main():
     for s in strategy_names:
         strategy = strategy_names[s]
         print(f'Strategy {strategy}:')
+        print()
         sim = Simulator(7)
         sim.add_to_group([0, 5, 6])
 
@@ -24,11 +25,15 @@ def main():
 
         produced, dropped, received, sent = sim.run(s, [0])
 
+        print()
+        print("SUMMARY")
         for i in range(7):
             print(f'Node {i} produced {produced[i]}, dropped {dropped[i]}, received {received[i]}, sent {sent[i]}')
-
+        
+        print()
         print(f'Total produced: {sum(produced)}, total dropped: {sum(dropped)}, total received: {sum(received)}, total sent: {sum(sent)}')
 
+        print()
         print()
 
     
