@@ -94,7 +94,7 @@ class Simulator:
                 for n in self.nodes[node].pit.get_interest_by_id(interestID).remaining_destinations:
                     if n != node:
                         lowest_cost_face = self.nodes[node].rib.get_lowest_cost_route(n, used_faces)
-                        if lowest_cost_face not in faces_to_send:
+                        if lowest_cost_face not in faces_to_send and lowest_cost_face != -1:
                             faces_to_send.append(lowest_cost_face)
 
                 for f in faces_to_send:

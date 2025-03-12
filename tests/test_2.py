@@ -11,7 +11,7 @@ def main():
         strategy = strategy_names[s]
         print(f'Strategy {strategy}:')
         print()
-        sim = Simulator(15)
+        sim = Simulator(12)
         sim.add_to_group([2, 6, 11])
 
         # Change this 
@@ -29,11 +29,11 @@ def main():
         sim.set_routes(10, {2:{7:4},6:{7:2},11:{11:2}})
         sim.set_routes(11,{2:{10:5},6:{10:3}})
 
-        produced, dropped, kept, sent = sim.run(s, [0])
+        produced, dropped, kept, sent = sim.run(s, [2])
 
         print()
         print("SUMMARY")
-        for i in range(15):
+        for i in range(12):
             print(f'Node {i} produced {produced[i]}, dropped {dropped[i]}, kept {kept[i]}, sent {sent[i]}')
         
         print()
