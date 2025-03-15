@@ -1,37 +1,30 @@
 from fib import *
-from forwarding_strategies import *
+from forwarder import *
 from pit import *
 from rib import *
 
-STRATEGY_LOWEST_COST = 1
-STRATEGY_SEND_ALL = 2
-
-strategy_names = {1: "lowest_cost", 2: "send_all"}
-
 class Node:
-    def __init__(self, nodeID):
-        self.in_group = False
+    def __init__(self, nodeID, strategy, simulator):
+        self.group_prefixes = []
         self.nodeID = nodeID
-        self.pit = Pit(nodeID)
+        self.pit = Pit(self)
         # Note that the RIB acts as a FIB here
         self.rib = Rib(nodeID)
-        self.faces = []
-
-    def set_faces(self, faces):
-        self.faces = faces
+        self.forwarder = Forwarder(self, strategy)
+        self.simulator = simulator
     
     def set_routes(self, routing_info):
         self.rib.set_routes(routing_info)
     
-    def add_to_group(self):
-        self.in_group = True
+    def add_to_group(self, group_prefix):
+        self.group_prefixes.append(group_prefix)
 
     def receive_interest(self, interest, from_node):
-        self.rib.used_faces.append(from_node)
-        return self.pit.receive_interest(interest)
+        #self.rib.used_faces.append(from_node)
+        return self.pit.receive_interest(interest, from_node)
 
-    def produce_interest(self):
-        return self.pit.produce_interest()
+    def produce_interest(self, prefix):
+        return self.pit.produce_interest(prefix)
     
     def get_interest_to_send(self, interestID, face):
         return self.pit.get_interest_to_send(interestID, face)
@@ -40,37 +33,33 @@ class Node:
         return self.pit.ready_interests()
 
 class Simulator:
-    def __init__(self, num_nodes):
-        self.nodes = [Node(i) for i in range(num_nodes)]
+    def __init__(self, num_nodes, strategy):
+        self.nodes = [Node(i, strategy, self) for i in range(num_nodes)]
         self.num_nodes = num_nodes
-        self.nodes_in_group = []
+        self.groups = {}
+        self.remaining_destinations = {} # This CANNOT be used in forwarding logic, only for metrics
         self.interests_produced = [0 for i in range(num_nodes)]
         self.interests_dropped = [0 for i in range(num_nodes)]
         self.interests_kept = [0 for i in range(num_nodes)]
         self.interests_sent = [0 for i in range(num_nodes)]
 
-    def add_to_group(self, nodeIDs):
+    def add_to_group(self, nodeIDs, group_prefix):
         for nodeID in nodeIDs:
-            self.nodes[nodeID].add_to_group()
-            self.nodes_in_group.append(nodeID)
+            self.nodes[nodeID].add_to_group(group_prefix)
+        self.groups[group_prefix] = nodeIDs[::]
     
     def set_routes(self, nodeID, routing_info):
         self.nodes[nodeID].set_routes(routing_info)
     
     def send_interest(self, from_node, face, interestID):
-        #print(self.nodes[from_node].pit.used_faces_by_interest(interestID))
         interest = self.nodes[from_node].get_interest_to_send(interestID, face)
-        interest.used_faces.append(face)
-        if face in self.nodes[from_node].rib.used_faces:
-            return
         print(f'Interest {interestID} sent from {from_node} to {face}')
         self.interests_sent[from_node] += 1
-        self.nodes[from_node].rib.used_faces.append(face)
-        #print("Used faces by rib: " + str(self.nodes[from_node].rib.used_faces))
-        if face in self.nodes_in_group:
-            if face in interest.remaining_destinations:
-                interest.remaining_destinations.remove(face)
-                if len(interest.remaining_destinations) == 0:
+        #self.nodes[from_node].rib.used_faces.append(face)
+        if face in self.groups[interest.group_prefix]:
+            if face in self.remaining_destinations[interestID]:
+                self.remaining_destinations[interestID].remove(face)
+                if len(self.remaining_destinations[interestID]) == 0:
                     print(f'Interest {interestID} reached all nodes in group!')
         if not self.nodes[face].receive_interest(interest, from_node):
             print(f'Interest {interestID} dropped at {face}')
@@ -78,57 +67,25 @@ class Simulator:
         else:
             self.interests_kept[face] += 1
 
-    def produce_interest(self, node):
-        interest = self.nodes[node].produce_interest()
-        interest.used_faces.append(node)
-        interest.remaining_destinations = [s for s in self.nodes_in_group if s != node]
+    def produce_interest(self, node, prefix):
+        interest = self.nodes[node].produce_interest(prefix)
+        self.remaining_destinations[interest.ID] = self.groups[prefix][::]
+        #interest.remaining_destinations = [s for s in self.nodes_in_group if s != node]
         self.interests_produced[node] += 1
 
-    def run_forwarding_strategy(self, strategy, node):
-        if strategy == STRATEGY_LOWEST_COST:
-            any_sent = False
-            for interestID in self.nodes[node].ready_interests():
-                used_faces = self.nodes[node].pit.used_faces_by_interest(interestID)
-                faces_to_send = []
-                #print("already used " + str(used_faces))
-                for n in self.nodes[node].pit.get_interest_by_id(interestID).remaining_destinations:
-                    if n != node:
-                        lowest_cost_face = self.nodes[node].rib.get_lowest_cost_route(n, used_faces)
-                        if lowest_cost_face not in faces_to_send and lowest_cost_face != -1:
-                            faces_to_send.append(lowest_cost_face)
+    def run_forwarding_strategy(self, node):
+        self.nodes[node].forwarder.run_forwarding_strategy()
 
-                for f in faces_to_send:
-                    any_sent = True
-                    self.send_interest(node, f, interestID)
-            return any_sent
+    def run(self, starting_interests):
 
-        if strategy == STRATEGY_SEND_ALL:
-            any_sent = False
-            for interestID in self.nodes[node].ready_interests():
-                used_faces = self.nodes[node].pit.used_faces_by_interest(interestID)
-                #print("already used " + str(used_faces))
-                faces_to_send = []
-                for n in self.nodes[node].pit.get_interest_by_id(interestID).remaining_destinations:
-                    if n != node:
-                        possible_faces = self.nodes[node].rib.get_all_faces_to_node(n, used_faces=used_faces)
-                        for p in possible_faces:
-                            if p not in faces_to_send:
-                                faces_to_send.append(p)
-
-                for f in faces_to_send:
-                    any_sent = True
-                    self.send_interest(node, f, interestID)
-            return any_sent
-
-
-
-    def run(self, strategy, starting_interests):
         for s in starting_interests:
-            self.produce_interest(s)
+            node = s[0]
+            prefix = s[1]
+            self.produce_interest(node, prefix)
         while True:
             # Loop until no nodes are sending anything
             interests_sent = [False for i in range(self.num_nodes)]
             for n in self.nodes:
-                interests_sent[n.nodeID] = self.run_forwarding_strategy(strategy, n.nodeID)
+                interests_sent[n.nodeID] = self.run_forwarding_strategy(n.nodeID)
             if True not in interests_sent:
                 return self.interests_produced, self.interests_dropped, self.interests_kept, self.interests_sent
