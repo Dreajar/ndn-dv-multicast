@@ -7,12 +7,12 @@ from simulator import *
 
 def main():
 
-    for s in strategy_names:
-        strategy = strategy_names[s]
-        print(f'Strategy {strategy}:')
+    for s in strategy_map:
+        strategy = strategy_map[s]
+        print(f'Strategy {strategy.name}:')
         print()
-        sim = Simulator(4)
-        sim.add_to_group([0, 2, 3])
+        sim = Simulator(4, strategy)
+        sim.add_to_group([0, 2, 3], '/test')
 
         # This would normally be built by a distance vector router
         sim.set_routes(0, {2:{1:2,2:1,3:2},3:{1:2,2:2,3:1}})
@@ -22,7 +22,9 @@ def main():
 
         
 
-        produced, dropped, kept, sent = sim.run(s, [0])
+        starting_interests = [([0], '/test')]
+
+        produced, dropped, kept, sent = sim.run(starting_interests)
 
         print()
         print("SUMMARY")

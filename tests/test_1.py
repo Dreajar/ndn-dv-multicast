@@ -23,7 +23,7 @@ def main():
         sim.set_routes(5, {0: {1: 2, 6: 5}, 6: {1: 3, 6: 1}})
         sim.set_routes(6, {0: {4: 3, 5: 3}, 5: {4: 3, 5: 1}})
 
-        starting_interests = [(0, '/test')]
+        starting_interests = [([0], '/test')]
 
         produced, dropped, kept, sent = sim.run(starting_interests)
 

@@ -25,8 +25,16 @@ class Rib:
 
         for f in self.routes[node]:
             if self.routes[node][f] == lowest_cost:
-                lowest_cost_nodes.append(self.routes[node][f])
+                lowest_cost_nodes.append(f)
         return lowest_cost_nodes
+
+    def get_all_best_routes(self):
+        # Gets all faces that are the best route to *some* group member.
+        best_faces = []
+        for node in self.routes:
+            best_faces += self.get_lowest_cost_routes(node)
+        return list(set(best_faces))
+            
             
     def get_all_faces_to_node(self, node):
         # Returns all faces that can reach a node and have not yet been used by an interest
