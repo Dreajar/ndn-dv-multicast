@@ -1,4 +1,3 @@
-from fib import *
 from forwarder import *
 from pit import *
 from rib import *
