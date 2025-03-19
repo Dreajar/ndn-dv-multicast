@@ -8,14 +8,14 @@ from simulator import *
 from routing import *
 
 def main():
+    # This should have the EXACT SAME output as test_2.py, checks that routing algorithm works
 
     # Get config file, parse and turn into routing info via Bellman-Ford
-    group_members = [1, 5, 31, 33, 37, 49]
-    config_file = "topo.sprint.conf"
+    group_members = [2, 6, 11]
+    config_file = "topo2.conf"
     
     nodes, routes = converge(group_members, config_file)
-
-    print(routes)
+    print(nodes, routes)
 
     for s in strategy_map:
         strategy = strategy_map[s]
@@ -29,13 +29,13 @@ def main():
             #print(r, routes[r])
             sim.set_routes(r, routes[r])
 
-        starting_interests = [([1], '/test')]
+        starting_interests = [([2], '/test')]
 
         produced, dropped, kept, sent = sim.run(starting_interests)
 
         print()
         print("SUMMARY")
-        for i in range(len(nodes)):
+        for i in range(7):
             print(f'Node {i} produced {produced[i]}, dropped {dropped[i]}, kept {kept[i]}, sent {sent[i]}')
         
         print()

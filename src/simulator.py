@@ -90,7 +90,7 @@ class Simulator:
                 interests_sent[n.nodeID] = self.run_forwarding_strategy(n.nodeID)
             #print(interests_sent)
             if True not in interests_sent:
-                for dest in self.remaining_destinations:
-                    if len(self.remaining_destinations[dest]) != 0:
-                        print(f'Interest {interestID} did not reach nodes ' + str(self.remaining_destinations[dest]))
+                for interestID in self.remaining_destinations:
+                    if len(self.remaining_destinations[interestID]) != 0:
+                        print(f'Interest {interestID} did not reach nodes ' + str(self.remaining_destinations[interestID]))
                 return self.interests_produced, self.interests_dropped, self.interests_kept, self.interests_sent
