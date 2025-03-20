@@ -10,8 +10,11 @@ from routing import *
 def main():
 
     # Get config file, parse and turn into routing info via Bellman-Ford
+
+    # Important parameters for the test
     group_members = [1, 5, 31, 33, 37, 49]
     config_file = "topo.sprint.conf"
+    starting_interests = [([1], '/test')]
     
     nodes, routes = converge(group_members, config_file)
 
@@ -24,12 +27,8 @@ def main():
         sim = Simulator(len(nodes), strategy)
         sim.add_to_group(group_members, '/test')
 
-        # This would normally be built by a distance vector router
         for r in routes:
-            #print(r, routes[r])
             sim.set_routes(r, routes[r])
-
-        starting_interests = [([1], '/test')]
 
         produced, dropped, kept, sent = sim.run(starting_interests)
 
