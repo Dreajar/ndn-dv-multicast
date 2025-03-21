@@ -6,12 +6,14 @@ sys.path.append('../src')
 
 from simulator import *
 from routing import *
+from powerset import *
 
 def main():
 
     # Get config file, parse and turn into routing info via Bellman-Ford
-    group_members = [3, 7, 11, 15, 18, 21, 25, 29, 32, 36]
+    
     config_file = "topo.testbed.conf"
+    group_members = [3, 7, 11, 15, 18, 21, 25, 29, 32, 36]
     
     nodes, routes = converge(group_members, config_file)
 
