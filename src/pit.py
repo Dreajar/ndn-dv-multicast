@@ -37,12 +37,13 @@ class Pit:
             self.in_faces[interest.ID] = []
         self.in_faces[interest.ID].append(face)
 
+        # Returns False if the packet is dropped
         if not self.node.forwarder.on_receive(interest, face):
             return False
 
         if interest.ID not in self.ready_IDs:
             self.ready_IDs.append(interest.ID)
-        # Returns False if the packet is dropped
+
         self.interests[interest.ID] = interest
         self.IDs.append(interest.ID)
         return True
@@ -68,6 +69,7 @@ class Pit:
     def get_interest_by_id(self, interestID):
         return Interest(original=self.interests[interestID])
 
+    # Returns a copy of an interest to be sent to another node
     def get_interest_to_send(self, interestID, face):
         if interestID not in self.out_faces:
             self.out_faces[interestID] = []

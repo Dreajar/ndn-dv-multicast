@@ -7,7 +7,6 @@ class StrategySendAll:
         self.forwarder = forwarder
 
     def on_receive(self, interest, face):
-        #print(self.forwarder.node.rib.get_lowest_cost_routes(interest.producer))
         is_lowest_cost_route = face in self.forwarder.node.rib.get_lowest_cost_routes(interest.producer)
         already_have = interest.ID in self.forwarder.interests()
         return is_lowest_cost_route and not already_have
@@ -15,13 +14,11 @@ class StrategySendAll:
     def choose_interests_to_send(self):
         interests_to_send = []
         for interestID in self.forwarder.interests():
-            #print(self.forwarder.all_faces(), self.forwarder.in_faces())
             in_faces = [] if interestID not in self.forwarder.in_faces() else self.forwarder.in_faces()[interestID]
             out_faces = [] if interestID not in self.forwarder.out_faces() else self.forwarder.out_faces()[interestID]
             faces_to_send = [s for s in self.forwarder.all_faces() if s not in in_faces and s not in out_faces]
             interest_and_faces = (interestID, faces_to_send)
             interests_to_send.append(interest_and_faces)
-        #print(self.forwarder.node.nodeID, interests_to_send)
         return interests_to_send
 
 
@@ -32,7 +29,6 @@ class StrategyLowestCost:
         self.forwarder = forwarder
 
     def on_receive(self, interest, face):
-        #print(self.forwarder.node.rib.get_lowest_cost_routes(interest.producer))
         is_lowest_cost_route = face in self.forwarder.node.rib.get_lowest_cost_routes(interest.producer)
         already_have = interest.ID in self.forwarder.interests()
         return is_lowest_cost_route and not already_have
@@ -40,7 +36,6 @@ class StrategyLowestCost:
     def choose_interests_to_send(self):
         interests_to_send = []
         for interestID in self.forwarder.interests():
-            #self.forwarder.interests()[interestID]
             in_faces = [] if interestID not in self.forwarder.in_faces() else self.forwarder.in_faces()[interestID]
             out_faces = [] if interestID not in self.forwarder.out_faces() else self.forwarder.out_faces()[interestID]
             faces_to_send = [s for s in self.forwarder.node.rib.get_all_best_routes() if s not in in_faces and s not in out_faces]
@@ -71,9 +66,11 @@ class Forwarder:
     def all_faces(self):
         return self.node.rib.faces
 
+    # The on_receive function in each strategy returns whether to drop the packet or not
     def on_receive(self, interest, face):
         return self.strategy.on_receive(interest, face)
 
+    # Sends all interests available, returns whether any were sent
     def run_forwarding_strategy(self):
         any_sent = False
         for interest_and_faces in self.strategy.choose_interests_to_send():

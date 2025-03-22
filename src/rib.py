@@ -16,7 +16,6 @@ class Rib:
     
     def get_lowest_cost_routes(self, node):
         # Gets the lowest cost route to a node.
-        #print(node, used_faces, self.routes)
         lowest_cost = 10000000000
         lowest_cost_nodes = []
         for f in self.routes[node]:

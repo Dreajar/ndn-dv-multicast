@@ -19,7 +19,6 @@ class Node:
         self.group_prefixes.append(group_prefix)
 
     def receive_interest(self, interest, from_node):
-        #self.rib.used_faces.append(from_node)
         return self.pit.receive_interest(interest, from_node)
 
     def produce_interest(self, prefix):
@@ -52,25 +51,25 @@ class Simulator:
     
     def send_interest(self, from_node, face, interestID):
         interest = self.nodes[from_node].get_interest_to_send(interestID, face)
+        # Log the interest being sent
         print(f'Interest {interestID} sent from {from_node} to {face}')
+
         self.interests_sent[from_node] += 1
-        #self.nodes[from_node].rib.used_faces.append(face)
         if face in self.groups[interest.group_prefix]:
             if face in self.remaining_destinations[interestID]:
                 self.remaining_destinations[interestID].remove(face)
                 if len(self.remaining_destinations[interestID]) == 0:
                     print(f'Interest {interestID} reached all nodes in group!')
-        #print(self.remaining_destinations[interestID])
         if not self.nodes[face].receive_interest(interest, from_node):
             print(f'Interest {interestID} dropped at {face}')
             self.interests_dropped[face] += 1
         else:
             self.interests_kept[face] += 1
 
+    # Tells a node to produce an interest to be sent, call this in the test
     def produce_interest(self, node, prefix):
         interest = self.nodes[node].produce_interest(prefix)
         self.remaining_destinations[interest.ID] = [s for s in self.groups[prefix] if s != node]
-        #interest.remaining_destinations = [s for s in self.nodes_in_group if s != node]
         self.interests_produced[node] += 1
 
     def run_forwarding_strategy(self, node):
@@ -88,7 +87,8 @@ class Simulator:
             interests_sent = [False for i in range(self.num_nodes)]
             for n in self.nodes:
                 interests_sent[n.nodeID] = self.run_forwarding_strategy(n.nodeID)
-            #print(interests_sent)
+            
+            # At the end, check if any group members did not receive this interest
             if True not in interests_sent:
                 for interestID in self.remaining_destinations:
                     if len(self.remaining_destinations[interestID]) != 0:
