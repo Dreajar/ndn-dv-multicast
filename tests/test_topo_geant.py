@@ -15,7 +15,7 @@ def main():
     
     nodes, routes = converge(group_members, config_file)
 
-    print(routes)
+    #print(routes)
 
     for s in strategy_map:
         strategy = strategy_map[s]

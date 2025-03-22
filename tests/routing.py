@@ -80,8 +80,9 @@ def converge(group_members, config_file):
             all_edges.append([e, edge])
     nodes = edges.keys()
 
+    #print(all_edges)
+
     V = len(nodes)
-    
     all_routes = bellman_ford(V, all_edges, group_members)
 
     #print(all_routes)

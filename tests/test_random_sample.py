@@ -1,0 +1,62 @@
+import sys
+from minindn_to_nodes import *
+from random import randint
+
+sys.path.append('../src')
+
+from simulator import *
+from routing import *
+
+def main():
+
+    # We will run 1000 random samples to test whether any runs lead to incorrect behavior (interest not reaching all members)
+    for i in range(1000):
+        group_size = randint(2, 50)
+        group_members = []
+        while group_size > 0:
+            member = randint(0, 51) # Number of nodes
+            if member not in group_members:
+                group_members.append(member)
+                group_size -= 1
+        
+        # Choose a random group member to produce an interest
+        starting_interests = [([group_members[randint(0, len(group_members)-1)]], "/test")]
+
+        # Get config file, parse and turn into routing info via Bellman-Ford
+
+        # Important parameters for the test
+        config_file = "topo.sprint.conf"
+        
+        nodes, routes = converge(group_members, config_file)
+
+        #print(routes)
+
+        for s in strategy_map:
+            strategy = strategy_map[s]
+            print(f'Strategy {strategy.name}:')
+            print()
+            sim = Simulator(len(nodes), strategy)
+            sim.add_to_group(group_members, '/test')
+
+            for r in routes:
+                sim.set_routes(r, routes[r])
+
+            produced, dropped, kept, sent = sim.run(starting_interests)
+
+            print()
+            print("SUMMARY")
+            for i in range(len(nodes)):
+                print(f'Node {i} produced {produced[i]}, dropped {dropped[i]}, kept {kept[i]}, sent {sent[i]}')
+            
+            print()
+            print(f'Total produced: {sum(produced)}, total dropped: {sum(dropped)}, total kept: {sum(kept)}, total sent: {sum(sent)}')
+
+            print()
+            print()
+
+    
+
+    print("Simulation complete!")
+
+if __name__ == '__main__':
+    main()
